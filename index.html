@@ -629,20 +629,15 @@ for(let col=0; col<numStartingColonies; col++){
   // Assign initial leader
   const spawnX = Math.random() * gridWidth;
   const spawnY = Math.random() * gridHeight;
-  const numFarms = col === 0 ? 4 : 3;
+  const numFarms = 3;
   for(let i=0;i<numFarms;i++) createBuilding('farm', spawnX + Math.random()*120-60, spawnY + Math.random()*120-60,{},f.id);
-  const numNPCs = col === 0 ? 100 : 80;
+  const numNPCs = 80;
   let potentialLeader = null;
   for(let i=0;i<numNPCs;i++){ 
     const t=createNPC(null,f.id); 
     t.x = spawnX + Math.random()*600-300; 
     t.y = spawnY + Math.random()*600-300; 
-    if(Math.random() < (col === 0 ? 0.4 : 0.3)) t.trait = 'Explorer';
-    if (col === 0) {
-      t.energy += 30;
-      t.mats += 1;
-      t.tech += 0.5;
-    }
+    if(Math.random() < 0.3) t.trait = 'Explorer';
     if (!potentialLeader && (t.trait === 'Scholar' || t.trait === 'Warrior')) potentialLeader = t;
   }
   if (potentialLeader) {
@@ -854,14 +849,10 @@ function update(){
   for(let i=0;i<npcs.length;i++){
     if(i % stagger !== group) continue;
     const t = npcs[i];
-    const isDundies = t.faction === 'F1'; // Dundies faction ID
     const f = factions.find(ff => ff.id === t.faction);
     const biome = getBiome(t.x, t.y);
     t.energy -= 0.03 + Math.random()*0.01; // Reduced drain from 0.05+0.02
     if (biome === "belt") t.energy -= 0.01; // Reduced debuff from 0.02
-
-    // Dundies energy bonus
-    if (isDundies) t.energy += 0.15; // Increased from 0.1
 
     // Biome buffs
     if (biome === "nebula") t.exotic += 0.005;
@@ -922,13 +913,13 @@ function update(){
         t.travelProgress = 0;
         pushEvent('travel', `${t.name} arrived at distant sector (${Math.floor(t.x)}, ${Math.floor(t.y)})!`);
         // Chance to discover resources upon arrival
-        const discoverChance = isDundies ? 0.4 : 0.3;
+        const discoverChance = 0.3;
         if (Math.random() < discoverChance) {
           spawnResource('exotic', t.x, t.y);
           pushEvent('explore', `${t.name} discovered exotic resources in new sector!`);
         }
         // Chance to found outpost
-        if (t.mats > 15 && t.rare > 5 && Math.random() < (isDundies ? 0.03 : 0.02)) {
+        if (t.mats > 15 && t.rare > 5 && Math.random() < 0.02) {
           const fname = `Outpost-${idCounter++}`;
           const color = (Math.random()*0xffffff|0).toString(16).padStart(6,'0');
           const f = newFaction(fname, color);
@@ -973,14 +964,14 @@ function update(){
     }
 
     // For explorers, occasional long-range target setting
-    if(t.trait === 'Explorer' && Math.random() < (isDundies ? 0.006 : 0.004) && !t.targetX) {
+    if(t.trait === 'Explorer' && Math.random() < 0.004 && !t.targetX) {
       // Set a distant target
       t.targetX = (t.x + (Math.random() - 0.5) * gridWidth * 0.8 + gridWidth) % gridWidth;
       t.targetY = (t.y + (Math.random() - 0.5) * gridHeight * 0.8 + gridHeight) % gridHeight;
       t.travelProgress = 1;
       pushEvent('travel', `${t.name} embarked on space journey to (${Math.floor(t.targetX)}, ${Math.floor(t.targetY)})!`);
       // Chance to gain spaceship if tech is high enough
-      const spaceshipChance = isDundies ? 0.15 : 0.1;
+      const spaceshipChance = 0.1;
       if (t.tech > 6 && Math.random() < spaceshipChance) {
         t.spaceship = true;
         t.tech -= 6;
@@ -1057,8 +1048,8 @@ function update(){
         if(b.type==='temple'){ t.culture += 0.08; nearTemple = b; }
         if(b.type==='fortress'){ t.energy += 0.1; nearFort = true; } // Increased from 0.08
         if(b.type==='market'){ t.coins += 0.05; }
-        if(b.type==='factory'){ t.tech += 0.02; if(t.tech>4 && Math.random()< (isDundies ? 0.008 : 0.004)){ t.spaceship=true; t.tech-=4; pushEvent('build', `${t.name} built a Spaceship!`); } }
-        if(b.type==='portal'){ t.exotic += 0.01; if(t.exotic>3 && Math.random()< (isDundies ? 0.015 : 0.01)){ t.travelDevice=true; t.exotic-=3; pushEvent('build', `${t.name} built a Travel Device!`); } }
+        if(b.type==='factory'){ t.tech += 0.02; if(t.tech>4 && Math.random()< 0.004){ t.spaceship=true; t.tech-=4; pushEvent('build', `${t.name} built a Spaceship!`); } }
+        if(b.type==='portal'){ t.exotic += 0.01; if(t.exotic>3 && Math.random()< 0.01){ t.travelDevice=true; t.exotic-=3; pushEvent('build', `${t.name} built a Travel Device!`); } }
         if(b.type==='observatory'){ t.culture += 0.1; /* explore nearby */ const nearKey = getNearbyFromBuckets(npcBuckets, t.x, t.y, 100).map(n => bucketKey(n.x,n.y)); nearKey.forEach(k => f.explored.add(k)); }
         if(b.type==='hive'){ /* birth boost later */ }
         if(b.type==='relic_forge'){ t.tech += 0.05; f.research.forEach(res => res.progress += 0.3); } // Artifact crafting boost
@@ -1066,7 +1057,7 @@ function update(){
       }
     }
 
-    if(nearTemple && !t.faith && Math.random()< (isDundies ? 0.008 : 0.004)){
+    if(nearTemple && !t.faith && Math.random()< 0.004){
       t.faith = nearTemple.meta.faith || `Faith-${Math.floor(Math.random()*1000)}`;
       pushEvent('faith', `${t.name} joined ${t.faith}`);
     }
@@ -1079,15 +1070,6 @@ function update(){
     if(t.trait==='Mutant') { t.energy += 0.05; if(Math.random()<0.00005) t.dead=true; } // Reduced death chance from 0.0001
     if(t.trait==='Ascended') { t.energy += 0.03; t.tech += 0.01; }
     if(t.trait==='Smuggler') { t.coins += 0.03; } // Black market bonus
-
-    // Dundies trait bonuses 1.5x
-    if (isDundies) {
-      if(t.trait==='Scholar') t.culture += 0.01;
-      if(t.trait==='Warrior') t.energy += 0.015; // Increased
-      if(t.trait==='Inventor') { t.tech += 0.0075; if(f) f.research[0].progress += 0.05; }
-      if(t.trait==='Trader') t.coins += 0.01;
-      if(t.trait==='Explorer') t.exotic += 0.0025;
-    }
 
     // NPC Relationships & Romances
     const nearbyT = getNearbyFromBuckets(npcBuckets, t.x, t.y, 10);
@@ -1125,12 +1107,12 @@ function update(){
       });
     }
 
-    // Birth chance boosted for Dundies, hive, romances
+    // Birth chance boosted for hive, romances
     let birthMultiplier = 1;
     if (nearB.some(b => b.type === 'hive')) birthMultiplier = 1.5;
     const romanceBoost = Array.from(t.relationships.values()).some(r => r.type === 'lover') ? 2 : 1;
     const baseBirthChance = 0.0003 * birthMultiplier * romanceBoost; // Increased from 0.0002
-    const birthChance = isDundies ? baseBirthChance * 1.5 : baseBirthChance;
+    const birthChance = baseBirthChance;
     if(t.energy>120 && Math.random()<birthChance){
       const kid = createNPC(t, t.faction);
       pushEvent('birth', `${t.name} gave birth to ${kid.name}`);
@@ -1157,9 +1139,9 @@ function update(){
       }
     }
 
-    // Build chance boosted for Dundies, with artifact crafting
+    // Build chance with artifact crafting
     const baseBuildChance = t.trait==='Builder'?0.012:0.004;
-    const buildChance = isDundies ? baseBuildChance * 1.5 : baseBuildChance;
+    const buildChance = baseBuildChance;
     if(t.mats>8 && t.rare>2 && Math.random() < buildChance){
       let types = ['farm','mine','temple','fortress','market','observatory','hive','ecology_lab'];
       if(t.tech>3) types.push('factory');
@@ -1189,7 +1171,7 @@ function update(){
       });
     }
 
-    if(t.trait === 'Explorer' && t.mats > 10 && t.rare > 3 && Math.random() < (isDundies ? 0.01 : 0.005)){
+    if(t.trait === 'Explorer' && t.mats > 10 && t.rare > 3 && Math.random() < 0.005){
       const nearbyB = getNearbyFromBuckets(buildingBuckets, t.x, t.y, 500);
       if(nearbyB.length === 0){
         const fname = `Outpost-${idCounter++}`;
@@ -1210,7 +1192,7 @@ function update(){
       }
     }
 
-    if(t.trait === 'Explorer' && Math.random() < (isDundies ? 0.004 : 0.002)){
+    if(t.trait === 'Explorer' && Math.random() < 0.002){
       const eventType = Math.random() < 0.5 ? 'resource' : 'artifact';
       if(eventType === 'resource'){
         spawnResource('exotic', t.x + Math.random()*20-10, t.y + Math.random()*20-10);
@@ -1227,7 +1209,7 @@ function update(){
         if(other === t || other.faction === t.faction) continue;
         const faction = factions.find(f => f.id === t.faction);
         const otherF = factions.find(f => f.id === other.faction);
-        const conflictChance = isDundies ? 0.006 : 0.01;
+        const conflictChance = 0.008;
         if(faction.relations.get(other.faction)?.enemy && Math.random() < conflictChance){
           t.energy -= 5; other.energy -= 5; // Reduced from 10
           // Decrease trust
@@ -1264,6 +1246,30 @@ function update(){
   }
 
   npcs = npcs.filter(t=>!t.dead);
+  // Prevent starting factions from dying off completely
+  const startingFactionIds = ['F1', 'F2', 'F3', 'F4'];
+  startingFactionIds.forEach(fid => {
+    const f = factions.find(ff => ff.id === fid);
+    if (!f) return;
+    const members = npcs.filter(t => t.faction === fid && !t.dead).length;
+    if (members === 0) {
+      // Revive: spawn 5-10 NPCs
+      for(let i=0; i< Math.floor(Math.random()*6)+5; i++) {
+        const newT = createNPC(null, fid);
+        newT.x = Math.random() * gridWidth;
+        newT.y = Math.random() * gridHeight;
+        // Place near existing buildings if any
+        const factionB = buildings.filter(b => b.faction === fid);
+        if (factionB.length > 0) {
+          const b = factionB[Math.floor(Math.random()*factionB.length)];
+          newT.x = b.x + Math.random()*100 -50;
+          newT.y = b.y + Math.random()*100 -50;
+        }
+        pushEvent('revive', `${newT.name} revived ${f.name}!`);
+      }
+      majorEvents.unshift(`Gen ${generation}: 🔄 ${f.name} Revived from extinction!`);
+    }
+  });
   buildings.forEach(b=>{ b.timer++; if(Math.random()<0.00005) { b.dead=true; pushEvent('decay', `A ${b.type} decayed.`); } });
   buildings = buildings.filter(b=>!b.dead);
   if(Math.random() < Math.min(0.6, 0.15 + npcs.length/5000) && resources.length < 10000){
@@ -1285,23 +1291,11 @@ function update(){
     } else {
       if(Math.random()<0.5){
         const loss = Math.max(1, Math.floor(npcs.length*0.08)); // Reduced from 0.12
-        // Reduce loss for Dundies
-        const dundiesNpcs = npcs.filter(t => t.faction === 'F1');
-        const dundiesLoss = Math.max(0, Math.floor(dundiesNpcs.length * 0.06)); // Half loss for Dundies
         let totalLoss = 0;
         for(let i=0;i<loss;i++){
           const idx = Math.floor(Math.random()*npcs.length);
-          if(npcs[idx] && npcs[idx].faction !== 'F1'){
+          if(npcs[idx]) {
             npcs[idx].dead=true;
-            totalLoss++;
-          }
-        }
-        // Apply reduced loss to Dundies separately
-        for(let i=0;i<dundiesLoss;i++){
-          const dundiesIdx = Math.floor(Math.random()*dundiesNpcs.length);
-          if(dundiesNpcs[dundiesIdx]) {
-            const globalIdx = npcs.indexOf(dundiesNpcs[dundiesIdx]);
-            if(globalIdx !== -1) npcs[globalIdx].dead=true;
             totalLoss++;
           }
         }
@@ -1310,7 +1304,7 @@ function update(){
         cameraShake = 10; shakeTimer = 50; // Camera shake for calamity
       } else {
         npcs.forEach(t=>{
-          if(Math.random()< (t.faction === 'F1' ? 0.25 : 0.15)){ t.mats+=5; t.tech+=2; }
+          if(Math.random()< 0.15){ t.mats+=5; t.tech+=2; }
         });
         majorEvents.unshift(`Gen ${generation}: UFO VISIT — tech & mats gifted!`);
         cameraShake = 5; shakeTimer = 30;
